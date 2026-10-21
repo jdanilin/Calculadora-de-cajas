@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
+<title>Estimado de Cajas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: una columna — entradas arriba, cadena de cálculo tipo pizarra, total final */
+:root{
+  --bg:#f5f6f1; --card:#ffffff; --fg:#1d241b; --muted:#5e6a59; --line:#d9ded2;
+  --accent:#2f6b2a; --accent-soft:#e3eedd; --marker:#b3261e;
+  --f-display:"Archivo",system-ui,sans-serif;
+  --f-body:"Source Sans 3",system-ui,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141812; --card:#1c2219; --fg:#e7ece2; --muted:#9aa693; --line:#30382c;
+  --accent:#8cc97f; --accent-soft:#24331f; --marker:#ff8a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141812; --card:#1c2219; --fg:#e7ece2; --muted:#9aa693; --line:#30382c;
+  --accent:#8cc97f; --accent-soft:#24331f; --marker:#ff8a80; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.wrap{max-width:640px;margin:0 auto;padding-block:20px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0}
+h2{font-family:var(--f-display);font-weight:600;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.grid{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;font-weight:600;min-width:0}
+label small{font-weight:400;color:var(--muted);font-size:.78rem}
+input[type=number]{font-family:var(--f-num);font-size:1.05rem;padding:10px 12px;border:1px solid var(--line);
+  border-radius:8px;background:var(--card);color:var(--fg);width:100%;box-sizing:border-box}
+input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.check{flex-direction:row;align-items:center;gap:8px;font-weight:400;grid-column:1/-1}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.ratio{background:var(--accent-soft);border-radius:10px;padding:12px 14px;font-family:var(--f-num);font-size:.92rem;display:flex;flex-direction:column;gap:4px}
+.ratio b{color:var(--accent)}
+.steps{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+td{padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.op{font-family:var(--f-num);color:var(--marker)}
+td.res{font-family:var(--f-num);font-weight:700;text-align:right}
+td.lbl{color:var(--muted);font-size:.85rem;white-space:normal}
+.total{border:2px solid var(--marker);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:2px}
+.total .n{font-family:var(--f-num);font-weight:700;font-size:2.4rem;color:var(--marker);line-height:1.1}
+.total .t{color:var(--muted);font-size:.9rem}
+button{font-family:var(--f-body);font-weight:600;font-size:.9rem;padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;align-self:flex-start}
+button:focus-visible{outline:2px solid var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Estimado de Cajas</h1>
+    <p class="sub">Plantas por ha → racimos → ratio → cajas totales. Cargado con el ejercicio de la pizarra.</p>
+  </header>
+
+  <section>
+    <h2>Datos</h2>
+    <div class="grid">
+      <label for="ha">Hectáreas<input id="ha" type="number" step="any" value="31"></label>
+      <label for="dens">Plantas por ha<small>Densidad inicial</small><input id="dens" type="number" step="any" value="1550"></label>
+      <label for="impr">% Improductivas<small>Se descuenta</small><input id="impr" type="number" step="any" value="5"></label>
+      <label for="reco">% Pérdida recobro<small>Se descuenta</small><input id="reco" type="number" step="any" value="5"></label>
+      <label for="rat">Ratooning<small>Racimos por planta al año</small><input id="rat" type="number" step="any" value="1.70"></label>
+      <label for="peso">Peso racimo (kg)<input id="peso" type="number" step="any" value="27"></label>
+      <label for="fi">% FI<input id="fi" type="number" step="any" value="10"></label>
+      <label for="caja">Peso por caja (kg)<small>Para convertir a ratio</small><input id="caja" type="number" step="any" value="18.4"></label>
+      <label class="check" for="redondear"><input id="redondear" type="checkbox" checked>Redondear ratio a 2 decimales (como en la pizarra)</label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ratio</h2>
+    <div class="ratio" id="ratioBox"></div>
+  </section>
+
+  <section>
+    <h2>Cálculo</h2>
+    <div class="steps"><table><tbody id="tb"></tbody></table></div>
+  </section>
+
+  <section class="total">
+    <span class="t">Total estimado</span>
+    <span class="n" id="total">—</span>
+    <span class="t" id="totalSub"></span>
+  </section>
+
+  <button id="reset" type="button">Volver al ejercicio de la pizarra</button>
+</div>
+
+<script>
+const ids=["ha","dens","impr","reco","rat","peso","fi","caja"];
+const defaults={ha:31,dens:1550,impr:5,reco:5,rat:1.70,peso:27,fi:10,caja:18.4};
+const $=id=>document.getElementById(id);
+const v=id=>parseFloat($(id).value)||0;
+const f=(n,d=0)=>n.toLocaleString("es-CR",{minimumFractionDigits:d,maximumFractionDigits:d});
+
+function calc(){
+  const ha=v("ha"),dens=v("dens"),impr=v("impr")/100,reco=v("reco")/100,rat=v("rat"),
+        peso=v("peso"),fi=v("fi")/100,caja=v("caja");
+  const neto=peso-peso*fi;
+  let ratio=caja>0?neto/caja:0;
+  const ratioRaw=ratio;
+  if($("redondear").checked) ratio=Math.round(ratio*100)/100;
+
+  const p1=dens*(1-impr);
+  const p2=p1*(1-reco);
+  const p3=p2*rat;
+  const cajasHa=p3*ratio;
+  const total=cajasHa*ha;
+
+  $("ratioBox").innerHTML=
+    `<span>${f(peso,2)} − ${f(peso,2)} × ${f(fi*100,1)}% = <b>${f(neto,2)} kg</b> netos</span>`+
+    `<span>${f(neto,2)} ÷ ${f(caja,2)} kg/caja = <b>${f(ratioRaw,4)}</b> cajas/racimo</span>`+
+    `<span>Ratio usado: <b>${f(ratio,$("redondear").checked?2:4)}</b></span>`;
+
+  const rows=[
+    [`${f(dens)} × ${f(1-impr,2)}`,f(p1),"Sin improductivas"],
+    [`${f(p1)} × ${f(1-reco,2)}`,f(p2),"Recobro"],
+    [`${f(p2)} × ${f(rat,2)}`,f(p3),"Ratooning (racimos/ha)"],
+    [`${f(p3)} × ${f(ratio,2)}`,f(cajasHa),"Cajas por ha"],
+    [`${f(cajasHa)} × ${f(ha,2)} ha`,f(total),"Cajas totales"],
+  ];
+  $("tb").innerHTML=rows.map(r=>`<tr><td class="op">${r[0]}</td><td class="res">${r[1]}</td><td class="lbl">${r[2]}</td></tr>`).join("");
+  $("total").textContent=f(total)+" cajas";
+  $("totalSub").textContent=`${f(cajasHa)} cajas/ha en ${f(ha,2)} ha`;
+}
+ids.forEach(i=>$(i).addEventListener("input",calc));
+$("redondear").addEventListener("change",calc);
+$("reset").addEventListener("click",()=>{ids.forEach(i=>$(i).value=defaults[i]);$("redondear").checked=true;calc();});
+calc();
+</script>
+</body>
+</html>
